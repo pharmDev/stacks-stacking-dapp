@@ -48,3 +48,40 @@
   { participated: bool }
 )
 
+;; private functions
+(define-private (is-contract-owner)
+  (is-eq tx-sender contract-owner)
+)
+
+(define-private (calculate-reward (staker principal) (amount uint) (duration uint))
+  (let (
+    (base-reward (/ (* amount duration) u10000))
+    (bonus (if (>= duration u6) (/ amount u100) u0))
+  )
+    (+ base-reward bonus)
+  )
+)
+
+(define-private (get-current-reward-cycle)
+  (let (
+    (current-block-height block-height)
+  )
+    (/ current-block-height reward-cycle-length)
+  )
+)
+
+(define-private (update-reward-cycle)
+  (let (
+    (new-cycle (get-current-reward-cycle))
+  )
+    (if (> new-cycle (var-get current-cycle))
+      (begin
+        (var-set current-cycle new-cycle)
+        (map-set cycle-rewards { cycle: new-cycle } { total-reward: (var-get pool-rewards-per-cycle) })
+        (ok true)
+      )
+      (ok false)
+    )
+  )
+)
+
